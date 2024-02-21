@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Zalozhnyy/sbt_k8s/internal/http-server/handlers/health"
 	"github.com/Zalozhnyy/sbt_k8s/internal/http-server/handlers/objects"
 	mylogger "github.com/Zalozhnyy/sbt_k8s/internal/http-server/middleware/myLogger"
 	mapstorage "github.com/Zalozhnyy/sbt_k8s/internal/storage/map_storage"
@@ -31,9 +32,13 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	router.Route("/objects", func(r chi.Router) {
-
 		r.Put("/{id}", objects.NewSaver(log, storage))
 		r.Get("/{id}", objects.NewGetter(log, storage))
+	})
+
+	router.Route("/probes", func(r chi.Router) {
+		r.Get("/liveness", health.New(log))
+		r.Get("/readiness", health.New(log))
 	})
 
 	srv := &http.Server{

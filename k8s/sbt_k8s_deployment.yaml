@@ -21,18 +21,16 @@ spec:
           # define a liveness probe that checks every 5 seconds, starting after 5 seconds
           livenessProbe:
             httpGet:
-              path: /live
-              port: 8086
+              path: /probes/liveness
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 5
           # define a readiness probe that checks every 5 seconds
           readinessProbe:
             httpGet:
-              path: /ready
-              port: 8086
+              path: /probes/readiness
+              port: 8080
             periodSeconds: 5
           ports:
-            - containerPort: 3000
-              protocol: TCP
-            - containerPort: 8000
+            - containerPort: 8080
               protocol: TCP
