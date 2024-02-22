@@ -109,3 +109,6 @@ ${BIN_OUTDIR}/golangci-lint/golangci-lint:
 	tar -xf ${GOLANGCI_LINT_ARCHIVE} --strip-components=1 -C ${BIN_OUTDIR}/golangci-lint/
 	chmod +x ${BIN_OUTDIR}/golangci-lint
 	rm -f ${GOLANGCI_LINT_ARCHIVE}
+
+make run:
+	go run cmd/main.go

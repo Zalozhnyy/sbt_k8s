@@ -20,5 +20,6 @@ probes/liveness
 кастомные метрики `sbt_k8s_number_of_json_without_expire_time` `sbt_k8s_number_of_jsons`
 
 ## Start
+run app locally `make run` or `go run cmd/main.go`
 server starts at 0.0.0.0:8080
 
