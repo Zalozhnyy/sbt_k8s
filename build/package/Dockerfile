@@ -29,5 +29,5 @@ RUN apk update \
 COPY --from=builder /usr/src/sbt_k8s/sbt_k8s /usr/bin/sbt_k8s
 VOLUME ["/etc/sbt_k8s"]
 ENTRYPOINT ["sbt_k8s"]
-EXPOSE 3000
+EXPOSE 8080
 USER sbt_k8s
