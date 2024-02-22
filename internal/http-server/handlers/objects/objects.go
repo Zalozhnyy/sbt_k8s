@@ -1,6 +1,7 @@
 package objects
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -14,6 +15,8 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
 )
+
+var ErrNotValidData = errors.New("not valid input")
 
 type Request struct {
 	Data string `json:"data"`
@@ -46,6 +49,7 @@ func NewGetter(log *slog.Logger, getter JsonGetter) http.HandlerFunc {
 
 		js, err := getter.Get(id)
 		if errors.Is(err, storage.ErrDoNotExists) || errors.Is(err, storage.ErrExpired) {
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, resp.Error(err.Error()))
 			return
 		}
@@ -80,18 +84,24 @@ func NewSaver(log *slog.Logger, saver JsonSaver) http.HandlerFunc {
 		err := render.DecodeJSON(r.Body, &req)
 		if errors.Is(err, io.EOF) {
 			log.Error("request body is empty")
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, resp.Error("empty request"))
 			return
 		}
 		if err != nil {
 			log.Error("failed to decode request body", sl.Err(err))
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, resp.Error("failed to decode request"))
 			return
 		}
 
 		log.Info("request body decoded", slog.Any("request", req))
 
-		// TODO is json validation
+		if !json.Valid([]byte(req.Data)) {
+			render.Status(r, http.StatusBadRequest)
+			render.JSON(w, r, resp.Error(ErrNotValidData.Error()))
+			return
+		}
 
 		dto.RrawJson = req.Data
 		id := chi.URLParam(r, "id")
