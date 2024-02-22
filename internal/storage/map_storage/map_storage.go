@@ -1,6 +1,8 @@
 package mapstorage
 
 import (
+	"context"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -42,4 +44,34 @@ func (m *MapStorage) Get(id string) (objects.JsonDto, error) {
 	}
 
 	return js, nil
+}
+
+func cleanMap(storage *MapStorage) {
+
+	storage.m.Lock()
+	defer storage.m.Unlock()
+
+	for key, js := range storage.data {
+		if !js.ExpiredTime.IsZero() && time.Now().After(js.ExpiredTime) {
+			delete(storage.data, key)
+		}
+	}
+
+}
+
+func MapCleaner(ctx context.Context, log *slog.Logger, storage *MapStorage) {
+	ticker := time.NewTicker(time.Minute * 10)
+	defer ticker.Stop()
+LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("map cleaner stopped")
+			break LOOP
+		case <-ticker.C:
+			log.Info("start clean map storage")
+			cleanMap(storage)
+			log.Info("cleaning finish")
+		}
+	}
 }

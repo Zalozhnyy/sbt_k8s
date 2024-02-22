@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,16 +13,19 @@ import (
 	"github.com/Zalozhnyy/sbt_k8s/internal/http-server/handlers/objects"
 	mylogger "github.com/Zalozhnyy/sbt_k8s/internal/http-server/middleware/myLogger"
 	mapstorage "github.com/Zalozhnyy/sbt_k8s/internal/storage/map_storage"
+	"github.com/Zalozhnyy/sbt_k8s/lib/sl"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
 
 func main() {
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	log := setupLogger()
 
-	// TODO init db
 	storage := mapstorage.New()
+	go mapstorage.MapCleaner(ctx, log, storage)
 
 	router := chi.NewRouter()
 
@@ -51,7 +55,7 @@ func main() {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			log.Error("failed to start server")
+			log.Error("failed to start server", sl.Err(err))
 		}
 	}()
 
@@ -62,6 +66,14 @@ func main() {
 
 	<-done
 	log.Info("stopping server")
+	cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("failed to stop server", sl.Err(err))
+		return
+	}
+
+	log.Info("server stopped")
 
 }
 
