@@ -16,6 +16,7 @@ import (
 	"github.com/Zalozhnyy/sbt_k8s/lib/sl"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -26,6 +27,7 @@ func main() {
 
 	storage := mapstorage.New()
 	go mapstorage.MapCleaner(ctx, log, storage)
+	go mapstorage.GetLenOfMapStorage(ctx, log, storage)
 
 	router := chi.NewRouter()
 
@@ -44,6 +46,8 @@ func main() {
 		r.Get("/liveness", health.New(log))
 		r.Get("/readiness", health.New(log))
 	})
+
+	router.Handle("/metrics", promhttp.Handler())
 
 	srv := &http.Server{
 		Addr:         "0.0.0.0:8080",
@@ -68,7 +72,7 @@ func main() {
 	log.Info("stopping server")
 	cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(context.Background()); err != nil {
 		log.Error("failed to stop server", sl.Err(err))
 		return
 	}

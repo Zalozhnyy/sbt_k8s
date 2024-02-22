@@ -8,6 +8,19 @@ import (
 
 	"github.com/Zalozhnyy/sbt_k8s/internal/http-server/handlers/objects"
 	"github.com/Zalozhnyy/sbt_k8s/internal/storage"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+var (
+	jsonsWithoutTime = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "sbt_k8s_number_of_json_without_expire_time",
+		Help: "Total number of messages without expire time",
+	})
+	totalNumberOfSavedJsons = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "sbt_k8s_number_of_jsons",
+		Help: "Total number of messages",
+	})
 )
 
 type MapStorage struct {
@@ -23,7 +36,9 @@ func New() *MapStorage {
 }
 
 func (m *MapStorage) Save(id string, obj objects.JsonDto) error {
-
+	if obj.ExpiredTime.IsZero() {
+		jsonsWithoutTime.Inc()
+	}
 	m.m.Lock()
 	m.data[id] = obj
 	m.m.Unlock()
@@ -74,4 +89,20 @@ LOOP:
 			log.Info("cleaning finish")
 		}
 	}
+}
+
+func GetLenOfMapStorage(ctx context.Context, log *slog.Logger, storage *MapStorage) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			break LOOP
+		case <-ticker.C:
+			totalNumberOfSavedJsons.Set(float64(len(storage.data)))
+		}
+	}
+
 }

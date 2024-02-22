@@ -76,6 +76,7 @@ func NewSaver(log *slog.Logger, saver JsonSaver) http.HandlerFunc {
 		}
 
 		var req Request
+		defer r.Body.Close()
 		err := render.DecodeJSON(r.Body, &req)
 		if errors.Is(err, io.EOF) {
 			log.Error("request body is empty")
