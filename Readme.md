@@ -1,27 +1,19 @@
 # sbt_k8s
 
-TODO: add a description for your project
+sbt tz
 
 
-## Develop
+## Запросы
 
-TODO : add helpful instructions for your developer workflow
+PUT objects/id      data example `{"data": "{\"data\": \"json\"}"}`
+GET objects/id
 
-Golang
------
+для интеграции с k8s
+probes/liveness
+probes/liveness
 
-To build the application locally -
+metrics prometheus
+кастомные метрики `sbt_k8s_number_of_json_without_expire_time` `sbt_k8s_number_of_jsons`
 
-```
-make build
-```
 
-The built image is outputted to the /bin folder
-
-Docker
-------
-
-To build the Docker image -
-```
-make image
-```
+server starts at 0.0.0.0:8080
